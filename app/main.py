@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
-from . import models
+from . import models, schema
 from sqlalchemy.orm import Session
 from .database import engine, SessionLocal
 
@@ -20,12 +20,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
 
 while True:
     try:
@@ -52,11 +46,6 @@ def find(id):
 def root():
     return {"message": "Hello World"}
 
-@app.get("/sql")
-def test(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return {"data": posts}
-
 
 @app.get("/posts")
 def get_posts(db: Session = Depends(get_db)):
@@ -66,7 +55,7 @@ def get_posts(db: Session = Depends(get_db)):
     return {"data": posts}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(post: Post, db: Session = Depends(get_db)):
+def create_posts(post: schema.PostCreate, db: Session = Depends(get_db)):
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING * """,
     #     (post.title, post.content, post.published))
     # new_post = cursor.fetchone()
@@ -104,7 +93,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
-def update_post(id: int, upd_post: Post, db: Session = Depends(get_db)):
+def update_post(id: int, upd_post: schema.PostCreate, db: Session = Depends(get_db)):
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""",
     #                 (post.title, post.content, post.published, str(id)))
     # update_post = cursor. fetchone()
